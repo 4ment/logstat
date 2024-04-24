@@ -6,11 +6,14 @@ def effective_sample_size_one_dim(states, max_lag):
 
     Args:
         states (ndarray): samples with shape [N].
-        max_lag (int): maximum lag.
+        max_lag (int): maximum lag (max_lag > 0).
 
     Returns:
         float: Effective sample size.
     """
+    assert max_lag > 0
+    assert len(states) > max_lag
+
     samples = len(states)
     gamma_stat = np.zeros(max_lag)
     var_stat = 0.0
