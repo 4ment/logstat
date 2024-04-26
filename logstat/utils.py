@@ -1,3 +1,5 @@
+from io import StringIO
+
 import numpy as np
 
 
@@ -44,3 +46,29 @@ def pad_list(x, size, default=0.0):
         (0, size - len(x)),
         constant_values=x[-1],
     )
+
+
+def tabulate(data, header, variables):
+    """Tabulate data."""
+    table_header = np.expand_dims(np.concatenate([np.array(['']), header]), axis=0)
+    table_body = np.concatenate([np.expand_dims(variables, axis=1), data], axis=1)
+    table = np.concatenate([table_header, table_body], axis=0)
+    table_max = np.apply_along_axis(lambda x: max(map(len, x)), 0, table)
+
+    string = StringIO()
+    string.write(f"{table[0, 0]:{table_max[0]}}")
+    for col in range(1, table.shape[1]):
+        string.write(f" |{table[0, col]:{'>'}{table_max[col]+1}}")
+    string.write('\n')
+
+    separator = np.full(sum(table_max) + 3 * (len(table_max) - 1), '-')
+    separator[np.cumsum(table_max + 3)[:-1] - 2] = '+'
+    string.write(''.join(separator) + '\n')
+
+    for row in range(1, table.shape[0]):
+        string.write(f"{table[row, 0]:{table_max[0]}}")
+        for col in range(1, table.shape[1]):
+            string.write(f" |{table[row, col]:{'>'}{table_max[col]+1}}")
+        string.write('\n')
+
+    return string.getvalue()

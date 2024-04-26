@@ -1,8 +1,8 @@
 import numpy as np
-import pandas as pd
+import polars as pl
 
 from logstat.stats import compute_stats
-from logstat.utils import formatter, pad_list
+from logstat.utils import formatter, pad_list, tabulate
 
 
 def run(args):
@@ -12,19 +12,21 @@ def run(args):
     all_variables = []
 
     burnins = pad_list(args.burnin, len(args.logfiles))
+    skip_rows = pad_list(args.skip_rows, len(args.logfiles), default=0)
 
     for idx, f in enumerate(args.logfiles):
-        df = pd.read_csv(f, sep=args.sep, comment=args.comment)
-
+        df = pl.read_csv(
+            f, separator=args.sep, comment_prefix=args.comment, skip_rows=skip_rows[idx]
+        )
         excluded = [args.state]
 
         if args.exclude is not None:
             excluded.extend(args.exclude)
-            df.drop(inplace=True, columns=excluded)
+            df = df.drop(excluded)
         elif args.include is not None:
-            df = df.filter(args.include)
+            df = df.select(args.include)
         else:
-            df.drop(inplace=True, columns=excluded)
+            df = df.drop(excluded)
 
         if args.burnin is not None:
             start = int(burnins[idx] * df.shape[0])
@@ -39,30 +41,26 @@ def run(args):
         stats = [list(map(formatter, data[:, i])) for i in range(1, data.shape[1])]
 
         all_data.append(np.concatenate((np.array(ess), np.array(stats).T), axis=1))
-        all_variables.append(df.columns)
+        all_variables.append(np.array(df.columns))
 
     if len(all_data) == 1:
         final_data = all_data[0]
         variables = all_variables[0]
     else:
         common_variables = np.array(
-            list(
-                set(all_variables[0].to_list()).intersection(
-                    *list(map(lambda x: set(x.to_list()), all_variables[1:]))
-                )
-            )
+            list(set(all_variables[0]).intersection(*list(map(set, all_variables[1:]))))
         )
         stats_count = all_data[0].shape[1]
 
         if len(common_variables) > 0:
             # preserve the original order of the parameters
-            indices = []
-            common_variables_list = common_variables.tolist()
-            first_variables_list = all_variables[0].to_list()
-            for x in first_variables_list:
-                if x in common_variables_list:
-                    indices.append(first_variables_list.index(x))
-            indices = np.array(indices)
+            indices = np.array(
+                [
+                    idx
+                    for idx, var in enumerate(all_variables[0])
+                    if var in common_variables
+                ]
+            )
             common_variables = all_variables[0][indices]
             common_data = [d[indices, :] for d in all_data]
 
@@ -80,18 +78,5 @@ def run(args):
             ).reshape(-1)
             final_data = np.concatenate(all_data, axis=1).reshape(-1, stats_count)
 
-    with pd.option_context(
-        'display.max_rows',
-        None,
-        'display.max_columns',
-        None,
-        'display.width',
-        0,
-    ):
-        print(
-            pd.DataFrame(
-                final_data,
-                index=variables,
-                columns=stats_header,
-            )
-        )
+    print()
+    print(tabulate(final_data, stats_header, variables))

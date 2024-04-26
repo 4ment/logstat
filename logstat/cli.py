@@ -28,6 +28,12 @@ def create_arg_parser():
         '--sep', default='\t', help="""delimiter in log file [default: tab-delimited]"""
     )
     parser.add_argument(
+        '--skip_rows',
+        type=int,
+        action='append',
+        help="""start reading log file after skip_rows lines [default: 0]""",
+    )
+    parser.add_argument(
         '--comment',
         default='#',
         help="""comment at the beginning of the log file [default: %(default)s]""",

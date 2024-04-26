@@ -7,7 +7,7 @@
 
 ### Dependencies
  - [numpy]
- - [pandas]
+ - [polars]
 
  ### Installation
 To install logstat from source you can run
@@ -50,8 +50,8 @@ Distributed under the GPLv3 License. See [LICENSE](LICENSE) for more information
 `logstat` makes use of the following libraries and tools, which are under their own respective licenses:
 
  - [numpy]
- - [pandas]
+ - [polars]
 
 [numpy]: https://github.com/numpy/numpy
-[pandas]: https://github.com/pandas-dev/pandas
+[polars]: https://github.com/pola-rs/polars
 [tracer]: https://github.com/beast-dev/tracer

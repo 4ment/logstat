@@ -23,5 +23,5 @@ disable = [
 ]
 generated-members = [
     "numpy.*",
-    "pandas.*"
+    "polars.*"
 ]
