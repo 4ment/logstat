@@ -38,7 +38,7 @@ def pad_list(x, size, default=0.0):
     Returns:
         list of float: x list
     """
-    if x is None:
+    if x is None or len(x) == 0:
         x = [default]
 
     return np.pad(

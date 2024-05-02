@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from logstat.cli import console_main, main
+from logstat.cli import cli, console_main
 
 
 class TestMainFunction(unittest.TestCase):
@@ -9,13 +9,13 @@ class TestMainFunction(unittest.TestCase):
     def test_main_runs_without_errors(self):
         # Test that main runs without raising any exceptions
         with self.assertRaises(SystemExit) as cm:
-            main()
+            cli()
         self.assertEqual(cm.exception.code, 0)
 
     def test_main_runs_help(self):
         # Test that main runs without raising any exceptions
         with self.assertRaises(SystemExit) as cm:
-            main(['--help'])
+            cli(['--help'])
         self.assertEqual(cm.exception.code, 0)
 
     @patch('sys.argv', ['logstat.cli.py', '--help'])

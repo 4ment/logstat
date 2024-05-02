@@ -1,40 +1,49 @@
+import click
 import numpy as np
 import polars as pl
 
+from logstat.options import common_options
 from logstat.stats import compute_stats
 from logstat.utils import formatter, pad_list, tabulate
 
 
-def run(args):
-    """Main function."""
+@click.command()
+@common_options
+@click.option(
+    '--hpd',
+    type=float,
+    default=0.95,
+    help="""interval of higher posterior density (HPD) [default: %(default)s]""",
+)
+def run(logfiles, burnin, sep, skip_rows, comment, state, include, exclude, hpd):
+    """Summarize posterior sample."""
 
     all_data = []
     all_variables = []
+    burnins = pad_list(burnin, len(logfiles))
+    skip_rows = pad_list(skip_rows, len(logfiles), default=0)
 
-    burnins = pad_list(args.burnin, len(args.logfiles))
-    skip_rows = pad_list(args.skip_rows, len(args.logfiles), default=0)
-
-    for idx, f in enumerate(args.logfiles):
+    for idx, f in enumerate(logfiles):
         df = pl.read_csv(
-            f, separator=args.sep, comment_prefix=args.comment, skip_rows=skip_rows[idx]
+            f, separator=sep, comment_prefix=comment, skip_rows=skip_rows[idx]
         )
-        excluded = [args.state]
+        excluded = [state]
 
-        if args.exclude is not None:
-            excluded.extend(args.exclude)
+        if len(exclude) > 0:
+            excluded.extend(exclude)
             df = df.drop(excluded)
-        elif args.include is not None:
-            df = df.select(args.include)
+        elif len(include) > 0:
+            df = df.select(include)
         else:
             df = df.drop(excluded)
 
-        if args.burnin is not None:
+        if burnin is not None:
             start = int(burnins[idx] * df.shape[0])
             df = df[start:]
 
         data = df.to_numpy()
 
-        data, stats_header = compute_stats(data, args.hpd)
+        data, stats_header = compute_stats(data, hpd)
 
         # convert ndarray of floats to ndarray of strings
         ess = list(map(lambda x: [f'{int(x)}'], data[:, 0]))
